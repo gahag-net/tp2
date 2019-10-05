@@ -1,10 +1,10 @@
 cc = clang++ # g++
-cflags = -g
-clibs = -lnsl # -lsocket
+cflags = -std=c++17 -g
+clibs = -lnsl
 
 
 %: src/%.cpp
-	${cc} ${cflags} ${clibs} $< -o $@
+	${cc} ${cflags} ${clibs} $< src/lib/*.cpp -o $@
 
 
 udp: clienteUDP servidorUDP
