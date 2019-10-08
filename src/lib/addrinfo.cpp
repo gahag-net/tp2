@@ -8,7 +8,15 @@ NameInfo AddrInfo::get_nameinfo(struct sockaddr* addr, socklen_t size) {
 	char host[256];
 	char port[256];
 
-	auto result = getnameinfo(addr, size, host, sizeof(host), port, sizeof(port), 0);
+	auto result = getnameinfo(
+		addr,
+		size,
+		host,
+		sizeof(host),
+		port,
+		sizeof(port),
+		0
+	);
 
 	if (result != 0)
 		throw AddrInfo::eai_exception(result);
@@ -35,18 +43,15 @@ std::system_error AddrInfo::eai_exception(int eai_error) {
 }
 
 
-AddrInfo::AddrInfo(int fd) {
-	if (fd < 0)
-		throw std::system_error(errno, std::generic_category());
-
-	struct sockaddr_in6 address;
+AddrInfo::AddrInfo(std::function<int(sockaddr*, socklen_t*)>&& filladdr) {
+	struct sockaddr_in6 address; // sockaddr_in6 is the biggest of sockaddrs.
 
 	socklen_t size = sizeof(address);
 	socklen_t original_size = size;
 
 	auto sockaddr = reinterpret_cast<struct sockaddr *>(&address);
 
-	if (::getpeername(fd, sockaddr, &size) < 0)
+	if (filladdr(sockaddr, &size) < 0)
 		throw std::system_error(errno, std::generic_category());
 
 	if (size > original_size)
@@ -64,6 +69,17 @@ AddrInfo::AddrInfo(int fd) {
 	if (result != 0)
 		throw AddrInfo::eai_exception(result);
 }
+
+AddrInfo::AddrInfo(int fd)
+	: AddrInfo(
+			[=](sockaddr* addr, socklen_t* size) {
+				if (fd < 0)
+					throw std::system_error(errno, std::generic_category());
+
+				return ::getpeername(fd, addr, size);
+			}
+		)
+{ }
 
 AddrInfo::AddrInfo(const char* node, const char* service, const addrinfo* hints) {
 	auto result = getaddrinfo(node, service, hints, &this->data);

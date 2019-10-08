@@ -2,6 +2,7 @@
 
 #include <system_error>
 #include <ostream>
+#include <functional>
 
 #include <netdb.h>
 
@@ -21,6 +22,7 @@ public:
 	static NameInfo get_nameinfo(struct sockaddr* addr, socklen_t size);
 	static std::system_error eai_exception(int);
 
+	AddrInfo(std::function<int(sockaddr*, socklen_t*)>&& fillAddr);
 	AddrInfo(int fd);
 	AddrInfo(const char* node, const char* service, const addrinfo* hints);
 	AddrInfo(const AddrInfo&) = delete;

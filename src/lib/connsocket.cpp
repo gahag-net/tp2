@@ -11,6 +11,9 @@
 
 
 ConnSocket::ConnSocket(AddrInfo&& address) : Socket(std::move(address)) {
+	if (this->addr->ai_socktype != SOCK_STREAM)
+		throw std::invalid_argument("ConnSocket must be used with TCP adresses");
+
 	if (::connect(this->fd, this->addr->ai_addr, this->addr->ai_addrlen) < 0)
 		throw std::system_error(errno, std::generic_category());
 }
@@ -18,7 +21,12 @@ ConnSocket::ConnSocket(AddrInfo&& address) : Socket(std::move(address)) {
 
 ConnSocket::ConnSocket(const ServerSocket& socket)
 	: Socket(
-			::accept(socket.descriptor(), nullptr, nullptr)
+			[&] {
+				if (socket.address()->ai_socktype != SOCK_STREAM)
+					throw std::invalid_argument("ConnSocket must be used with TCP adresses");
+
+				return ::accept(socket.descriptor(), nullptr, nullptr);
+			}()
 		)
 { }
 
