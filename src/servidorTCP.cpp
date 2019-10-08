@@ -10,56 +10,42 @@
 
 
 struct Args {
-	short port;
+	AddrInfo address;
 };
 
 Args parse_args(int argc, char** argv) {
-	Args args;
-
 	if (argc < 2) {
 		std::cerr << "Missing port argument";
+		std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
 		::exit(1);
 	}
 
-	if (!(std::istringstream(argv[1]) >> args.port)) {
-		std::cerr << "Invalid port argument";
-		::exit(1);
-	}
+	const char* port = argv[1];
 
-	return args;
-}
+	const addrinfo addrinfo = {
+		.ai_family = AF_UNSPEC, // accept both ipv4 and ipv6
+		.ai_socktype = SOCK_STREAM // force TCP
+	};
 
-
-std::string addr_to_string(sockaddr_in6 addr) {
-	char buffer[INET6_ADDRSTRLEN];
-
-	if (!::inet_ntop(AF_INET6, &addr.sin6_addr, buffer, sizeof(buffer)))
-		throw std::system_error(errno, std::generic_category());
-
-	std::ostringstream result;
-
-	result << buffer << ':' << ntohs(addr.sin6_port);
-
-	return result.str();
+	return (Args) {
+		.address = AddrInfo(
+			"::",
+			port,
+			&addrinfo
+		)
+	};
 }
 
 
 int main(int argc, char** argv) {
 	Args args = parse_args(argc, argv);
 
-	ServerSocket<sockaddr_in6> server(
-		sockaddr_in6 {
-			.sin6_family = AF_INET6,
-			.sin6_addr = in6addr_any,
-			.sin6_port = htons(args.port)
-		},
-		32
-	);
+	ServerSocket server(std::move(args.address), 32);
 
 	while (true) {
-		ConnSocket<sockaddr_in6> conn(server);
+		ConnSocket conn(server);
 
-		std::cout << "Connection from " << addr_to_string(conn.address()) << std::endl;
+		std::cout << "Connection from " << conn.address() << std::endl;
 
 		size_t size = 80;
 

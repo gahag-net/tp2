@@ -3,17 +3,32 @@
 #include <iostream>
 #include <cstring>
 #include <cerrno>
+#include <stdexcept>
 
 #include <sys/socket.h>
 #include <unistd.h>
+#include <netdb.h>
 
 
-Socket::Socket(int fd) : fd(fd) {
+Socket::Socket(int fd) : fd(fd), addr(fd) {
 	if (fd < 0)
 		throw std::system_error(errno, std::generic_category());
 }
 
-Socket::Socket(Socket&& other) : fd(other.fd) {
+Socket::Socket(int fd, AddrInfo&& addr) : fd(fd), addr(std::move(addr)) {
+	if (fd < 0)
+		throw std::system_error(errno, std::generic_category());
+}
+
+Socket::Socket(
+	AddrInfo&& address
+) : Socket(
+			::socket(address->ai_family, address->ai_socktype, address->ai_protocol),
+			std::move(address)
+		)
+{ }
+
+Socket::Socket(Socket&& other) : fd(other.fd), addr(std::move(other.addr)) {
 	other.fd = -1; // mark other as deleted.
 }
 
@@ -27,10 +42,11 @@ Socket::~Socket() {
 }
 
 Socket& Socket::operator=(Socket&& other) {
-	if (!this->deleted())
-		Socket(this->fd); // call destructor for the inner socket.
+	this->~Socket();
 
 	this->fd = other.fd;
+
+	this->addr = std::move(other.addr);
 
 	return *this;
 }
@@ -43,4 +59,8 @@ bool Socket::deleted() const {
 
 int Socket::descriptor() const {
 	return this->fd;
+}
+
+const AddrInfo& Socket::address() const {
+	return this->addr;
 }
