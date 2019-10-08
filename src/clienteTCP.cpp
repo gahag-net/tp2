@@ -49,10 +49,10 @@ int main(int argc, char** argv) {
 	std::size_t size = input.length();
 
 	ConnSocket<sockaddr_in6> conn(
-		sockaddr_in6 {
+		(sockaddr_in6) {
 			.sin6_family = AF_INET6,
-			.sin6_addr = in6addr_loopback,
-			.sin6_port = htons(args.port)
+			.sin6_port = htons(args.port),
+			.sin6_addr = in6addr_loopback
 		}
 	);
 
