@@ -21,8 +21,15 @@ clienteTCP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/connsocket.o obj/cliente
 servidorTCP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/serversocket.o obj/lib/connsocket.o obj/servidorTCP.o
 	${cc} ${lflags} ${llibs} $+ -o $@
 
-
 tcp: clienteTCP servidorTCP
+
+
+clienteUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/clienteUDP.o
+	${cc} ${lflags} ${llibs} $+ -o $@
+
+servidorUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/servidorUDP.o
+	${cc} ${lflags} ${llibs} $+ -o $@
+
 
 udp: clienteUDP servidorUDP
 
