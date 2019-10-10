@@ -22,7 +22,7 @@ public:
 	static NameInfo get_nameinfo(struct sockaddr* addr, socklen_t size);
 	static std::system_error eai_exception(int);
 
-	AddrInfo(std::function<int(sockaddr*, socklen_t*)>&& fillAddr);
+	AddrInfo(const std::function<int(int, sockaddr*, socklen_t*)>& fillAddr, int fd);
 	AddrInfo(int fd);
 	AddrInfo(const char* node, const char* service, const addrinfo* hints);
 	AddrInfo(const AddrInfo&) = delete;

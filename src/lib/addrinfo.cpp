@@ -43,26 +43,45 @@ std::system_error AddrInfo::eai_exception(int eai_error) {
 }
 
 
-AddrInfo::AddrInfo(std::function<int(sockaddr*, socklen_t*)>&& filladdr) {
+AddrInfo::AddrInfo(
+	const std::function<int(int, sockaddr*, socklen_t*)>& filladdr,
+	int fd
+) {
 	struct sockaddr_in6 address; // sockaddr_in6 is the biggest of sockaddrs.
 
+	// filladdr:
 	socklen_t size = sizeof(address);
 	socklen_t original_size = size;
 
 	auto sockaddr = reinterpret_cast<struct sockaddr *>(&address);
 
-	if (filladdr(sockaddr, &size) < 0)
+	if (filladdr(fd, sockaddr, &size) < 0)
 		throw std::system_error(errno, std::generic_category());
 
 	if (size > original_size)
 		throw std::length_error("sockaddr_in6 too small");
 
+	// nameinfo:
 	auto nameinfo = AddrInfo::get_nameinfo(sockaddr, size);
 
-	auto result = getaddrinfo(
+	// addrinfo hint:
+	addrinfo addrinfo_hint {
+		.ai_family = sockaddr->sa_family
+	};
+	size = sizeof(addrinfo_hint.ai_socktype);
+	original_size = size;
+
+	if (::getsockopt(fd, SOL_SOCKET, SO_TYPE, &addrinfo_hint.ai_socktype, &size) < 0)
+		throw std::system_error(errno, std::generic_category());
+
+	if (size > original_size)
+		throw std::length_error("socktype too small");
+
+	// addrinfo:
+	auto result = ::getaddrinfo(
 		nameinfo.node.c_str(),
 		nameinfo.service.c_str(),
-		nullptr,
+		&addrinfo_hint,
 		&this->data
 	);
 
@@ -72,13 +91,14 @@ AddrInfo::AddrInfo(std::function<int(sockaddr*, socklen_t*)>&& filladdr) {
 
 AddrInfo::AddrInfo(int fd)
 	: AddrInfo(
-			[=](sockaddr* addr, socklen_t* size) {
-				if (fd < 0)
-					throw std::system_error(errno, std::generic_category());
+	  	[](int fd, sockaddr* addr, socklen_t* size) {
+	  		if (fd < 0)
+	  			throw std::system_error(errno, std::generic_category());
 
-				return ::getpeername(fd, addr, size);
-			}
-		)
+	  		return ::getpeername(fd, addr, size);
+	  	},
+	  	fd
+	  )
 { }
 
 AddrInfo::AddrInfo(const char* node, const char* service, const addrinfo* hints) {
