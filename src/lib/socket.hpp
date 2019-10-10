@@ -14,7 +14,7 @@ protected:
 	bool deleted() const;
 
 public:
-	Socket(AddrInfo&& address);
+	Socket(AddrInfo&&, int (&attach)(const Socket&));
 	Socket(const Socket&) = delete;
 	Socket(Socket&&);
 	~Socket();
@@ -24,4 +24,12 @@ public:
 
 	int descriptor() const;
 	const AddrInfo& address() const;
+
+	bool is_tcp() const;
+	bool is_udp() const;
+
+
+	static int bind(const Socket&);
+	static int connect(const Socket&);
+	static int push(const Socket&);
 };

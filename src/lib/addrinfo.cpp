@@ -8,7 +8,7 @@ NameInfo AddrInfo::get_nameinfo(struct sockaddr* addr, socklen_t size) {
 	char host[256];
 	char port[256];
 
-	auto result = getnameinfo(
+	auto result = ::getnameinfo(
 		addr,
 		size,
 		host,
@@ -82,7 +82,7 @@ AddrInfo::AddrInfo(int fd)
 { }
 
 AddrInfo::AddrInfo(const char* node, const char* service, const addrinfo* hints) {
-	auto result = getaddrinfo(node, service, hints, &this->data);
+	auto result = ::getaddrinfo(node, service, hints, &this->data);
 
 	if (result != 0)
 		throw AddrInfo::eai_exception(result);
