@@ -21,9 +21,6 @@ Args parse_args(int argc, char** argv) {
 		::exit(1);
 	}
 
-	const char* ip = argv[1];
-	const char* port = argv[2];
-
 	const addrinfo addrinfo = {
 		.ai_family = AF_UNSPEC, // accept both ipv4 and ipv6
 		.ai_socktype = SOCK_DGRAM // force UDP
@@ -31,8 +28,7 @@ Args parse_args(int argc, char** argv) {
 
 	return (Args) {
 		.addr = AddrInfo(
-			ip,
-			port,
+			NameInfo(argv[1], argv[2]),
 			&addrinfo
 		)
 	};
@@ -65,8 +61,7 @@ int main(int argc, char** argv) try {
 
 	PushSocket sock(
 		AddrInfo(
-			"::",
-			"0",
+			NameInfo("::", "0"),
 			&addrinfo
 		),
 		Socket::push

@@ -10,12 +10,12 @@
 #include <netdb.h>
 
 
-Socket::Socket(int fd) : fd(fd), addr(fd) {
+Socket::Socket(const int fd) : fd(fd), addr(fd) {
 	if (fd < 0)
 		throw std::system_error(errno, std::generic_category());
 }
 
-Socket::Socket(int fd, AddrInfo&& addr) : fd(fd), addr(std::move(addr)) {
+Socket::Socket(const int fd, AddrInfo&& addr) : fd(fd), addr(std::move(addr)) {
 	if (fd < 0)
 		throw std::system_error(errno, std::generic_category());
 }
@@ -24,6 +24,7 @@ Socket::Socket(
 	AddrInfo&& address,
 	int (&attach)(const Socket&)
 ) : Socket(
+	  	// http://man7.org/linux/man-pages/man2/socket.2.html
 	  	::socket(address->ai_family, address->ai_socktype, address->ai_protocol),
 	  	std::move(address)
 	  )
@@ -37,12 +38,17 @@ Socket::Socket(Socket&& other) : fd(other.fd), addr(std::move(other.addr)) {
 }
 
 Socket::~Socket() {
-	if (!this->deleted())
-		if (::close(this->fd) < 0) {
-			std::cerr << "Failed to close connection (fd = " << this->fd << "):"
-			          << std::endl
-			          << std::strerror(errno);
-		}
+	if (this->deleted())
+		return;
+
+	// http://man7.org/linux/man-pages/man2/close.2.html
+	if (::close(this->fd) < 0) {
+		std::cerr << "Failed to close connection (fd = " << this->fd << "):"
+		          << std::endl
+		          << std::strerror(errno);
+	}
+
+	this->fd = -1;
 }
 
 
@@ -50,6 +56,7 @@ Socket& Socket::operator=(Socket&& other) {
 	this->~Socket();
 
 	this->fd = other.fd;
+	other.fd = -1; // mark other as deleted.
 
 	this->addr = std::move(other.addr);
 
@@ -81,15 +88,16 @@ bool Socket::is_udp() const {
 
 
 int Socket::bind(const Socket& sock) {
-	auto fd = sock.descriptor();
-	auto& addr = sock.address();
+	const auto fd = sock.descriptor();
+	const auto& addr = sock.address();
 
 	int on = 1;
-
 	// allow address reuse if possible:
+	// http://man7.org/linux/man-pages/man2/setsockopt.2.html
 	if (::setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0)
 		throw std::system_error(errno, std::generic_category());
 
+	// http://man7.org/linux/man-pages/man2/bind.2.html
 	return ::bind(fd, addr->ai_addr, addr->ai_addrlen);
 }
 
@@ -97,9 +105,10 @@ int Socket::connect(const Socket& sock) {
 	if (!sock.is_tcp())
 		throw std::invalid_argument("Call to tcp connect using udp address");
 
-	auto fd = sock.descriptor();
-	auto& addr = sock.address();
+	const auto fd = sock.descriptor();
+	const auto& addr = sock.address();
 
+	// http://man7.org/linux/man-pages/man2/connect.2.html
 	return ::connect(fd, addr->ai_addr, addr->ai_addrlen);
 }
 

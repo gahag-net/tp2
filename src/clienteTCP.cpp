@@ -21,9 +21,6 @@ Args parse_args(int argc, char** argv) {
 		::exit(1);
 	}
 
-	const char* ip = argv[1];
-	const char* port = argv[2];
-
 	const addrinfo addrinfo = {
 		.ai_family = AF_UNSPEC, // accept both ipv4 and ipv6
 		.ai_socktype = SOCK_STREAM // force TCP
@@ -31,8 +28,7 @@ Args parse_args(int argc, char** argv) {
 
 	return (Args) {
 		.address = AddrInfo(
-			ip,
-			port,
+			NameInfo(argv[1], argv[2]),
 			&addrinfo
 		)
 	};

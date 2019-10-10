@@ -4,48 +4,58 @@
 #include <system_error>
 
 
-NameInfo AddrInfo::get_nameinfo(struct sockaddr* addr, socklen_t size) {
-	char host[256];
-	char port[256];
+NameInfo::NameInfo(std::string&& node, std::string&& service)
+	: node(std::move(node)),
+	  service(std::move(service))
+{ }
 
-	auto result = ::getnameinfo(
+NameInfo::NameInfo(struct sockaddr* addr, socklen_t size) {
+	const size_t max_size = 256;
+
+	char node[max_size];
+	char service[max_size];
+
+	// http://man7.org/linux/man-pages/man3/getnameinfo.3.html
+	const auto result = ::getnameinfo(
 		addr,
 		size,
-		host,
-		sizeof(host),
-		port,
-		sizeof(port),
+		node,
+		sizeof(node),
+		service,
+		sizeof(service),
 		0
 	);
 
 	if (result != 0)
 		throw AddrInfo::eai_exception(result);
 
-	return {
-		.node = std::string(host),
-		.service = std::string(port)
-	};
+	this->node = std::string(node);
+	this->service = std::string(service);
 }
 
+
+
 std::system_error AddrInfo::eai_exception(int eai_error) {
-	return eai_error == EAI_SYSTEM
-		? std::system_error(
-				errno,
+	if (eai_error == EAI_SYSTEM)
+		return std::system_error(
+			errno,
+			std::generic_category()
+		);
+	else
+		return std::system_error(
+			std::error_code(
+				eai_error,
 				std::generic_category()
-			)
-		: std::system_error(
-				std::error_code(
-					eai_error,
-					std::generic_category()
-				),
-				gai_strerror(eai_error)
-			);
+			),
+			// http://man7.org/linux/man-pages/man3/gai_strerror.3p.html
+			::gai_strerror(eai_error)
+		);
 }
 
 
 AddrInfo::AddrInfo(
-	const std::function<int(int, sockaddr*, socklen_t*)>& filladdr,
-	int fd
+	const int fd,
+	const std::function<int(int, sockaddr*, socklen_t*)>& filladdr
 ) {
 	struct sockaddr_in6 address; // sockaddr_in6 is the biggest of sockaddrs.
 
@@ -53,16 +63,21 @@ AddrInfo::AddrInfo(
 	socklen_t size = sizeof(address);
 	socklen_t original_size = size;
 
-	auto sockaddr = reinterpret_cast<struct sockaddr *>(&address);
+	const auto sockaddr = reinterpret_cast<struct sockaddr *>(&address);
 
 	if (filladdr(fd, sockaddr, &size) < 0)
 		throw std::system_error(errno, std::generic_category());
 
 	if (size > original_size)
-		throw std::length_error("sockaddr_in6 too small");
+		throw std::length_error(
+			std::string(
+				typeid(address).name()
+			)
+			.append(" too small")
+		);
 
 	// nameinfo:
-	auto nameinfo = AddrInfo::get_nameinfo(sockaddr, size);
+	const NameInfo nameinfo(sockaddr, size);
 
 	// addrinfo hint:
 	addrinfo addrinfo_hint {
@@ -78,6 +93,7 @@ AddrInfo::AddrInfo(
 		throw std::length_error("socktype too small");
 
 	// addrinfo:
+	// http://man7.org/linux/man-pages/man3/getaddrinfo.3.html
 	auto result = ::getaddrinfo(
 		nameinfo.node.c_str(),
 		nameinfo.service.c_str(),
@@ -89,20 +105,27 @@ AddrInfo::AddrInfo(
 		throw AddrInfo::eai_exception(result);
 }
 
-AddrInfo::AddrInfo(int fd)
+AddrInfo::AddrInfo(const int fd)
 	: AddrInfo(
-	  	[](int fd, sockaddr* addr, socklen_t* size) {
+	  	fd,
+	  	[](const int fd, sockaddr* const addr, socklen_t* const size) {
 	  		if (fd < 0)
 	  			throw std::system_error(errno, std::generic_category());
 
+				// http://man7.org/linux/man-pages/man2/getpeername.2.html
 	  		return ::getpeername(fd, addr, size);
-	  	},
-	  	fd
+	  	}
 	  )
 { }
 
-AddrInfo::AddrInfo(const char* node, const char* service, const addrinfo* hints) {
-	auto result = ::getaddrinfo(node, service, hints, &this->data);
+AddrInfo::AddrInfo(const NameInfo& nameinfo, const addrinfo* hints) {
+	// http://man7.org/linux/man-pages/man3/getaddrinfo.3.html
+	const auto result = ::getaddrinfo(
+		nameinfo.node.c_str(),
+		nameinfo.service.c_str(),
+		hints,
+		&this->data
+	);
 
 	if (result != 0)
 		throw AddrInfo::eai_exception(result);
@@ -114,7 +137,8 @@ AddrInfo::AddrInfo(AddrInfo&& other) : data(other.data) {
 
 AddrInfo::~AddrInfo() {
 	if (this->data != nullptr)
-		freeaddrinfo(this->data);
+		// http://man7.org/linux/man-pages/man3/freeaddrinfo.3p.html
+		::freeaddrinfo(this->data);
 }
 
 
@@ -122,6 +146,7 @@ AddrInfo& AddrInfo::operator=(AddrInfo&& other) {
 	this->~AddrInfo();
 
 	this->data = other.data;
+	other.data = nullptr;
 
 	return *this;
 }
@@ -144,8 +169,8 @@ const addrinfo* AddrInfo::operator->() const {
 }
 
 
-std::ostream& operator<<(std::ostream &stream, const AddrInfo &address) {
-	auto nameinfo = AddrInfo::get_nameinfo(address->ai_addr, address->ai_addrlen);
+std::ostream& operator<<(std::ostream& stream, const AddrInfo& address) {
+	const NameInfo nameinfo(address->ai_addr, address->ai_addrlen);
 
   stream << nameinfo.node << ':' << nameinfo.service;
 

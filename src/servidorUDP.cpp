@@ -19,8 +19,6 @@ Args parse_args(int argc, char** argv) {
 		::exit(1);
 	}
 
-	const char* port = argv[1];
-
 	const addrinfo addrinfo = {
 		.ai_family = AF_UNSPEC, // accept both ipv4 and ipv6
 		.ai_socktype = SOCK_DGRAM // force UDP
@@ -28,8 +26,7 @@ Args parse_args(int argc, char** argv) {
 
 	return (Args) {
 		.address = AddrInfo(
-			"::",
-			port,
+			NameInfo("::", argv[1]),
 			&addrinfo
 		)
 	};

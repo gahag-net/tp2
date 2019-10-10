@@ -7,24 +7,33 @@
 #include <netdb.h>
 
 
-struct NameInfo {
+// A node:service pair.
+class NameInfo {
 public:
 	std::string node;
 	std::string service;
+
+	NameInfo() = default;
+	NameInfo(std::string&& node, std::string&& service);
+	NameInfo(struct sockaddr* addr, socklen_t size);
+	~NameInfo() = default;
 };
 
 
+// A socket address structure.
 class AddrInfo {
 protected:
-	addrinfo* data;
+	addrinfo* data; // nullptr when deleted.
 
 public:
-	static NameInfo get_nameinfo(struct sockaddr* addr, socklen_t size);
-	static std::system_error eai_exception(int);
+	static std::system_error eai_exception(int eai_error);
 
-	AddrInfo(const std::function<int(int, sockaddr*, socklen_t*)>& fillAddr, int fd);
+	// Construct from a file descriptor.
 	AddrInfo(int fd);
-	AddrInfo(const char* node, const char* service, const addrinfo* hints);
+	// Construct from a file descriptor and a function to fill a sockaddr.
+	AddrInfo(int fd, const std::function<int(int, sockaddr*, socklen_t*)>& fillAddr);
+	// Construct from a NameInfo.
+	AddrInfo(const NameInfo& nameinfo, const addrinfo* hints);
 	AddrInfo(const AddrInfo&) = delete;
 	AddrInfo(AddrInfo&&);
 	~AddrInfo();
@@ -40,4 +49,4 @@ public:
 };
 
 
-std::ostream& operator<<(std::ostream &stream, const AddrInfo &address);
+std::ostream& operator<<(std::ostream& stream, const AddrInfo& address);
