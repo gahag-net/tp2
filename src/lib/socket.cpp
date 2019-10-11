@@ -1,13 +1,13 @@
 #include "socket.hpp"
 
-#include <iostream>
-#include <cstring>
 #include <cerrno>
+#include <cstring>
+#include <iostream>
 #include <stdexcept>
+#include <system_error>
 
 #include <sys/socket.h>
 #include <unistd.h>
-#include <netdb.h>
 
 
 Socket::Socket(const int fd) : fd(fd), addr(fd) {

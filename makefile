@@ -30,7 +30,6 @@ clienteUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/cliente
 servidorUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/servidorUDP.o
 	${cc} ${lflags} ${llibs} $+ -o $@
 
-
 udp: clienteUDP servidorUDP
 
 
@@ -39,3 +38,4 @@ all: udp tcp
 
 clean:
 	rm -r ${objdir}
+	rm clienteTCP servidorTCP clienteTCP servidorTCP

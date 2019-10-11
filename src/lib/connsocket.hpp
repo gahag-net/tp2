@@ -3,14 +3,17 @@
 #include <cstdint>
 #include <memory>
 
-#include "socket.hpp"
 #include "addrinfo.hpp"
 #include "serversocket.hpp"
+#include "socket.hpp"
 
 
+// A TCP connection socket.
 class ConnSocket : public Socket {
 public:
+	// Connect to an address.
 	ConnSocket(AddrInfo&&);
+	// Accept connection from TCP server.
 	ConnSocket(const ServerSocket&);
 	~ConnSocket();
 

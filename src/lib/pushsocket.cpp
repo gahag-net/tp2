@@ -1,5 +1,10 @@
 #include "pushsocket.hpp"
 
+#include <cerrno>
+#include <system_error>
+
+#include <sys/socket.h>
+
 
 PushSocket::PushSocket(AddrInfo&& address, int (&attach)(const Socket&))
 	: Socket(
@@ -15,6 +20,7 @@ std::tuple<std::unique_ptr<uint8_t[]>, AddrInfo> PushSocket::recv(
 	auto buffer = std::make_unique<uint8_t[]>(size);
 
 	auto recv = [&](int fd, sockaddr* addr, socklen_t* addr_size) {
+		// http://man7.org/linux/man-pages/man3/recvfrom.3p.html
 		size = ::recvfrom(fd, buffer.get(), size, 0, addr, addr_size);
 		return size;
 	};
@@ -32,7 +38,8 @@ std::size_t PushSocket::send(
 	std::size_t size,
 	const AddrInfo& addr
 ) const {
-	auto result = sendto(this->fd, buffer, size, 0, addr->ai_addr, addr->ai_addrlen);
+	// http://man7.org/linux/man-pages/man3/sendto.3p.html
+	auto result = ::sendto(this->fd, buffer, size, 0, addr->ai_addr, addr->ai_addrlen);
 
 	if (result < 0)
 		throw std::system_error(errno, std::generic_category());

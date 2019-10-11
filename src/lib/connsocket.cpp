@@ -1,13 +1,11 @@
 #include "connsocket.hpp"
 
-#include <iostream>
+#include <cerrno>
 #include <cstring>
-#include <memory>
+#include <iostream>
+#include <system_error>
 
 #include <sys/socket.h>
-#include <netinet/in.h>
-
-#include "socket.hpp"
 
 
 ConnSocket::ConnSocket(AddrInfo&& address)
@@ -19,6 +17,7 @@ ConnSocket::ConnSocket(AddrInfo&& address)
 
 ConnSocket::ConnSocket(const ServerSocket& socket)
 	: Socket(
+	  	// http://man7.org/linux/man-pages/man2/accept.2.html
 	  	::accept(socket.descriptor(), nullptr, nullptr)
 	  )
 { }
@@ -35,6 +34,7 @@ ConnSocket::~ConnSocket() {
 std::unique_ptr<uint8_t[]> ConnSocket::recv(std::size_t& size) const {
 	auto buffer = std::make_unique<uint8_t[]>(size);
 
+	// http://man7.org/linux/man-pages/man2/recv.2.html
 	size = ::recv(this->fd, buffer.get(), size, 0);
 
 	if (size < 0)
@@ -45,6 +45,7 @@ std::unique_ptr<uint8_t[]> ConnSocket::recv(std::size_t& size) const {
 
 
 std::size_t ConnSocket::send(const uint8_t buffer[], std::size_t size) const {
+	// http://man7.org/linux/man-pages/man2/sendto.2.html
 	size = ::send(this->fd, buffer, size, 0);
 
 	if (size < 0)

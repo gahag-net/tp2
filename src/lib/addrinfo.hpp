@@ -1,10 +1,12 @@
 #pragma once
 
-#include <system_error>
-#include <ostream>
 #include <functional>
+#include <ostream>
+#include <string>
+#include <system_error>
 
 #include <netdb.h>
+#include <sys/socket.h>
 
 
 // A node:service pair.

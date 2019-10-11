@@ -1,15 +1,17 @@
 #pragma once
 
 #include <cstdint>
-#include <tuple>
 #include <memory>
+#include <tuple>
 
 #include "addrinfo.hpp"
 #include "socket.hpp"
 
 
+// A UDP socket
 class PushSocket : public Socket {
 public:
+	// attach must be bind for a server, or push for a client.
 	PushSocket(AddrInfo&&, int (&attach)(const Socket&));
 
 	std::tuple<std::unique_ptr<uint8_t[]>, AddrInfo> recv(std::size_t&) const;

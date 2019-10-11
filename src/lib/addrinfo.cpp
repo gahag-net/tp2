@@ -1,7 +1,6 @@
 #include "addrinfo.hpp"
 
 #include <cerrno>
-#include <system_error>
 
 
 NameInfo::NameInfo(std::string&& node, std::string&& service)
