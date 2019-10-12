@@ -1,56 +1,17 @@
 #include <cstdint>
 #include <iostream>
-#include <iterator>
-#include <sstream>
 
-#include <netinet/in.h>
-#include <arpa/inet.h>
+#include <sys/types.h>
 
+#include "client.hpp"
 #include "lib/addrinfo.hpp"
 #include "lib/connsocket.hpp"
 
 
-struct Args {
-	AddrInfo address;
-};
-
-Args parse_args(int argc, char** argv) {
-	if (argc < 3) {
-		std::cerr << "Missing arguments" << std::endl;
-		std::cerr << "Usage: " << argv[0] << " <ip> <port>" << std::endl;
-		::exit(1);
-	}
-
-	const addrinfo addrinfo = {
-		.ai_family = AF_UNSPEC, // accept both ipv4 and ipv6
-		.ai_socktype = SOCK_STREAM // force TCP
-	};
-
-	return (Args) {
-		.address = AddrInfo(
-			NameInfo(argv[1], argv[2]),
-			&addrinfo
-		)
-	};
-}
-
-
-std::string read_input() {
-	std::ios::sync_with_stdio(false);
-
-  std::cin >> std::noskipws;
-
-  return std::string(
-		std::istream_iterator<char>(std::cin),
-		std::istream_iterator<char>()
-	);
-}
-
-
 int main(int argc, char** argv) try {
-	Args args = parse_args(argc, argv);
+	client::Args args = client::parse_args(argc, argv, SOCK_STREAM);
 
-	std::string input = read_input();
+	std::string input = client::read_input();
 
 	std::size_t size = input.length();
 
@@ -73,6 +34,8 @@ int main(int argc, char** argv) try {
 	);
 
 	std::cout << output;
+
+	return 0;
 } catch (std::exception& e) {
 	std::cerr << "Fatal: " << e.what();
 	return -1;

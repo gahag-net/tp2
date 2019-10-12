@@ -35,7 +35,7 @@ public:
 	// Construct from a file descriptor and a function to fill a sockaddr.
 	AddrInfo(int fd, const std::function<int(int, sockaddr*, socklen_t*)>& fillAddr);
 	// Construct from a NameInfo.
-	AddrInfo(const NameInfo& nameinfo, const addrinfo* hints);
+	AddrInfo(const NameInfo& nameinfo, const addrinfo& hints);
 	AddrInfo(const AddrInfo&) = delete;
 	AddrInfo(AddrInfo&&);
 	~AddrInfo();

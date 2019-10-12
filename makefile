@@ -1,4 +1,4 @@
-cc = clang++ # g++
+cc = g++ # g++
 
 cflags = -std=c++17 -O2 -g
 cincludes := $(shell pkg-config --cflags libnsl)
@@ -15,19 +15,19 @@ ${objdir}/%.o: src/%.cpp
 	${cc} ${cflags} ${cincludes} -c $< -o $@
 
 
-clienteTCP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/connsocket.o obj/clienteTCP.o
+clienteTCP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/connsocket.o obj/client.o obj/clienteTCP.o
 	${cc} ${lflags} ${llibs} $+ -o $@
 
-servidorTCP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/serversocket.o obj/lib/connsocket.o obj/servidorTCP.o
+servidorTCP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/serversocket.o obj/lib/connsocket.o obj/server.o obj/servidorTCP.o
 	${cc} ${lflags} ${llibs} $+ -o $@
 
 tcp: clienteTCP servidorTCP
 
 
-clienteUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/clienteUDP.o
+clienteUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/client.o obj/clienteUDP.o
 	${cc} ${lflags} ${llibs} $+ -o $@
 
-servidorUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/servidorUDP.o
+servidorUDP: obj/lib/addrinfo.o obj/lib/socket.o obj/lib/pushsocket.o obj/server.o obj/servidorUDP.o
 	${cc} ${lflags} ${llibs} $+ -o $@
 
 udp: clienteUDP servidorUDP
@@ -38,4 +38,4 @@ all: udp tcp
 
 clean:
 	rm -r ${objdir}
-	rm clienteTCP servidorTCP clienteTCP servidorTCP
+	rm clienteTCP servidorTCP clienteUDP servidorUDP

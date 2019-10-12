@@ -1,42 +1,18 @@
 #include <iostream>
-#include <algorithm>
-#include <sstream>
 
-#include <arpa/inet.h>
-#include <netinet/in.h>
+#include <sys/types.h>
 
+#include "server.hpp"
 #include "lib/pushsocket.hpp"
 
 
-struct Args {
-	AddrInfo address;
-};
-
-Args parse_args(int argc, char** argv) {
-	if (argc < 2) {
-		std::cerr << "Missing port argument";
-		std::cerr << "Usage: " << argv[0] << " <port>" << std::endl;
-		::exit(1);
-	}
-
-	const addrinfo addrinfo = {
-		.ai_family = AF_UNSPEC, // accept both ipv4 and ipv6
-		.ai_socktype = SOCK_DGRAM // force UDP
-	};
-
-	return (Args) {
-		.address = AddrInfo(
-			NameInfo("::", argv[1]),
-			&addrinfo
-		)
-	};
-}
-
-
 int main(int argc, char** argv) {
-	Args args = parse_args(argc, argv);
+	server::Args args = server::parse_args(argc, argv, SOCK_DGRAM);
 
-	PushSocket sock(std::move(args.address), Socket::bind);
+	PushSocket sock(
+		std::move(args.address),
+		Socket::bind
+	);
 
 	while (true) {
 		size_t size = 80;
@@ -45,20 +21,7 @@ int main(int argc, char** argv) {
 
 		std::cout << "Connection from " << addr << std::endl;
 
-		auto data_begin = data.get();
-		auto data_end = data_begin + size;
-
-		std::reverse(data_begin, data_end);
-
-		std::transform(
-			data_begin,
-			data_end,
-			data_begin,
-			[](char c) {
-				return std::isupper(c) ? std::tolower(c)
-				                       : std::toupper(c);
-			}
-		);
+		server::process(data.get(), size);
 
 		if (sock.send(data.get(), size, addr) != size)
 			std::cerr << "warning: sent less bytes than received!";

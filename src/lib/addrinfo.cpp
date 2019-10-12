@@ -117,12 +117,12 @@ AddrInfo::AddrInfo(const int fd)
 	  )
 { }
 
-AddrInfo::AddrInfo(const NameInfo& nameinfo, const addrinfo* hints) {
+AddrInfo::AddrInfo(const NameInfo& nameinfo, const addrinfo& hints) {
 	// http://man7.org/linux/man-pages/man3/getaddrinfo.3.html
 	const auto result = ::getaddrinfo(
 		nameinfo.node.c_str(),
 		nameinfo.service.c_str(),
-		hints,
+		&hints,
 		&this->data
 	);
 
