@@ -27,7 +27,7 @@ int main(int argc, char** argv) try {
 
 		auto [ data, addr ] = sock.recv(size);
 
-		std::cout << "Connection from " << addr << std::endl;
+		// std::cout << "Connection from " << addr << std::endl;
 
 		server::process(data.get(), size);
 
@@ -35,7 +35,7 @@ int main(int argc, char** argv) try {
 			std::cerr << "warning: sent less bytes than received!";
 	}
 
-	std::cout << "Bye!";
+	// std::cout << "Bye!";
 
 	return 0;
 } catch (std::exception& e) {

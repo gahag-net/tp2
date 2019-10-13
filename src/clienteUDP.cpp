@@ -34,13 +34,13 @@ int main(int argc, char** argv) try {
 		args.address
 	);
 
-	std::cout << "Sent to " << args.address << std::endl;
+	// std::cout << "Sent to " << args.address << std::endl;
 
 	input.clear();
 
 	auto [ result, address ] = sock.recv(size);
 
-	std::cout << "Response from " << address << std::endl;
+	// std::cout << "Response from " << address << std::endl;
 
 	std::string output(
 		reinterpret_cast<char *>(result.get()),

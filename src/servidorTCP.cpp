@@ -26,7 +26,7 @@ int main(int argc, char** argv) try {
 	while (!quit) {
 		ConnSocket conn(server);
 
-		std::cout << "Connection from " << conn.address() << std::endl;
+		// std::cout << "Connection from " << conn.address() << std::endl;
 
 		size_t size = 80;
 
@@ -38,7 +38,7 @@ int main(int argc, char** argv) try {
 			std::cerr << "warning: sent less bytes than received!";
 	}
 
-	std::cout << "Bye!";
+	// std::cout << "Bye!";
 
 	return 0;
 } catch (std::exception& e) {

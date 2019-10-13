@@ -17,7 +17,7 @@ int main(int argc, char** argv) try {
 
 	ConnSocket conn(std::move(args.address));
 
-	std::cout << "Connected to " << conn.address() << std::endl;
+	// std::cout << "Connected to " << conn.address() << std::endl;
 
 	conn.send(
 		reinterpret_cast<const uint8_t*>(input.data()),
