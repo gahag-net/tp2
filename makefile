@@ -1,4 +1,4 @@
-cc = g++ # g++
+cc = g++ # clang++
 
 cflags = -std=c++17 -O2 -g
 cincludes := $(shell pkg-config --cflags libnsl)
