@@ -1,3 +1,4 @@
+#include <atomic>
 #include <iostream>
 
 #include <signal.h>
@@ -7,14 +8,17 @@
 #include "lib/pushsocket.hpp"
 
 
-bool quit = false;
+std::atomic<bool> interrupted = false;
+
 
 int main(int argc, char** argv) try {
 	server::Args args = server::parse_args(argc, argv, SOCK_DGRAM);
 
-	signal(
+	server::sig_handler(
 		SIGINT,
-		[](int sig) { quit = true; }
+		[](int) {
+			interrupted = true;
+		}
 	);
 
 	PushSocket sock(
@@ -22,7 +26,7 @@ int main(int argc, char** argv) try {
 		Socket::bind
 	);
 
-	while (!quit) {
+	while (!interrupted) {
 		size_t size = 80;
 
 		auto [ data, addr ] = sock.recv(size);
@@ -37,8 +41,9 @@ int main(int argc, char** argv) try {
 
 	// std::cout << "Bye!";
 
-	return 0;
-} catch (std::exception& e) {
-	std::cerr << "Fatal: " << e.what();
-	return -1;
+	return server::interrupted();
+} catch (const std::system_error& e) {
+	return server::sys_error(e);
+} catch (const std::exception& e) {
+	return server::exception(e);
 }
